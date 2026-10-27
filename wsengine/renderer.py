@@ -332,18 +332,23 @@ def generate_phonics(words, out_root: Path) -> Path:
 
 
 # ====================================================================== PRE-WRITING SERIES (templates A-J)
-def build_prewrite_pdf(words, out_pdf: Path) -> None:
+def build_prewrite_pdf(words, out_pdf: Path, lang: str = "id") -> None:
     from .prewriting import PREWRITE_FUNCS, PrewriteCtx
     meta = cfg.PREWRITE_SET
     order = meta["order"]
     c = canvas.Canvas(str(out_pdf), pagesize=(cfg.PAGE_W, cfg.PAGE_H))
-    c.setTitle(f"{meta['title_id']} / {meta['title_en']} - Bilingual Worksheets")
+    
+    # Metadata PDF menyesuaikan i18n
+    title_target = meta.get(f"title_{lang}", meta.get("title_id", "Pre-writing Worksheets"))
+    c.setTitle(f"{title_target} - Bilingual Worksheets")
     c.setAuthor(cfg.BRAND["name"])
     c.setSubject("Pre-writing and fine motor worksheets, ages 3-5")
+    
     for n, t in enumerate(order, 1):
         c.setLineJoin(1)
         c.setLineCap(1)
-        PREWRITE_FUNCS[t](c, PrewriteCtx(t, n, len(order), words))
+        # Teruskan parameter lang ke PrewriteCtx
+        PREWRITE_FUNCS[t](c, PrewriteCtx(t, n, len(order), words, lang=lang))
         c.showPage()
     c.save()
 
@@ -414,17 +419,26 @@ def make_prewrite_cover(words, pages: list[Image.Image], out: Path) -> None:
     tmp.unlink()
 
 
-def generate_prewrite(words, out_root: Path) -> Path:
+def generate_prewrite(words, out_root: Path, lang: str = "id") -> Path:
     meta = cfg.PREWRITE_SET
     order = meta["order"]
-    folder = out_root / meta["category"] / meta["folder"]
+    
+    # Buat subfolder berdasarkan bahasa jika diperlukan (misal: PRODUCTS/ES/Pre-Writing/...)
+    folder = out_root / meta["category"] / meta["folder"] / lang.upper()
     folder.mkdir(parents=True, exist_ok=True)
-    pdf_path = folder / PDF_NAME
-    build_prewrite_pdf(words, pdf_path)
+    
+    pdf_name = f"PreWriting_Series_{lang.upper()}.pdf"
+    pdf_path = folder / pdf_name
+    
+    # Buat PDF sesuai bahasa target
+    build_prewrite_pdf(words, pdf_path, lang=lang)
+    
+    # Rasterise dan buat image asset (PNGs, Cover, Preview)
     pages = rasterise(pdf_path)
     names = {t: cfg.PREWRITE_TEMPLATES[t]["name"] for t in order}
     save_page_pngs(pages, folder, order, names)
     make_preview(pages, order, folder / "Preview.png", names, per_row=5)
     make_prewrite_cover(words, pages, folder / "Cover.png")
     make_thumbnail(folder / "Cover.png", folder / "Thumbnail.png")
+    
     return folder

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Excel -> bilingual preschool worksheets.
 
-    python main.py                              # whole database
-    python main.py --only 001 003               # selected IDs
-    python main.py --qa-only                    # just run quality checks
-    python main.py --strict                     # warnings also block a row
+    python main.py                               # whole database (default ID)
+    python main.py --lang es                     # Spanish language
+    python main.py --only 001 003                # selected IDs
+    python main.py --qa-only                     # just run quality checks
+    python main.py --strict                      # warnings also block a row
     python main.py --db my.xlsx --out ./PRODUCTS
 """
 import argparse
@@ -31,8 +32,10 @@ def run_prewrite(a, out_root: Path, glossary: dict) -> int:
     print(f"QA: {sum(i.level == 'ERROR' for i in issues)} errors, {sum(i.level == 'WARNING' for i in issues)} warnings")
     if errors or a.qa_only:
         return 1 if errors else 0
-    folder = generate_prewrite(words, out_root)
-    print(f"Done: {cfg.PREWRITE_SET['title_id']} (10 pages) -> {folder.relative_to(out_root)}")
+    
+    # Teruskan parameter a.lang ke fungsi generate_prewrite
+    folder = generate_prewrite(words, out_root, lang=a.lang)
+    print(f"Done: {cfg.PREWRITE_SET['title_id']} (10 pages) [{a.lang.upper()}] -> {folder.relative_to(out_root)}")
     return 0
 
 
@@ -82,17 +85,29 @@ def main() -> int:
     ap.add_argument("--templates", default="".join(cfg.TEMPLATE_ORDER), help="e.g. ABE")
     ap.add_argument("--strict", action="store_true", help="treat QA warnings as errors")
     ap.add_argument("--qa-only", action="store_true")
-    a = ap.parse_args()
+    
+    # Tambahkan argumen --lang langsung pada parser ap:
+    ap.add_argument(
+        "--lang",
+        type=str,
+        default="id",
+        choices=["id", "en", "es", "fr", "de", "pt", "ja", "ar"],
+        help="Target language for PDF generation (default: id)"
+    )
 
+    a = ap.parse_args()
+    
     out_root = Path(a.out)
     out_root.mkdir(parents=True, exist_ok=True)
     glossary = load_glossary(a.glossary)
+
     if a.mode == "prewriting":
         return run_prewrite(a, out_root, glossary)
     if a.mode == "phonics":
         return run_phonics(a, out_root, glossary)
     if a.mode == "letters":
         return run_letters(a, out_root, glossary)
+        
     rows = load_database(a.db)
     print(f"Loaded {len(rows)} rows from {a.db}")
 

@@ -127,3 +127,33 @@ PREWRITE_SET = dict(
     folder="Pre-Writing and Fine Motor Skills A-J",
     i18n_key="prewrite_set",
 )
+# ------------------------------------------------------------------ LETTER SETS DEFINITIONS
+LETTER_SETS = {
+    "capital": dict(
+        order=list("ABCDEFGHIJ"),
+        category="Alphabet",
+        folder="Capital Letters A-Z",
+        title_en="Capital Letters A–Z",
+        title_id="Huruf Besar A–Z",
+        banner="BILINGUAL ALPHABET WORKBOOK  •  ENGLISH + BAHASA INDONESIA",
+        tiles="ABC",
+    ),
+    "small": dict(
+        order=list("KLMNOPQRST"),
+        category="Alphabet",
+        folder="Small Letters a-z",
+        title_en="Small Letters a–z",
+        title_id="Huruf Kecil a–z",
+        banner="BILINGUAL ALPHABET WORKBOOK  •  ENGLISH + BAHASA INDONESIA",
+        tiles="abc",
+    ),
+    "full": dict(
+        order=list("ABCDEFGHIJKLMNOPQRST"),
+        category="Alphabet",
+        folder="Alphabet Workbook Aa-Zz",
+        title_en="Alphabet Aa–Zz",
+        title_id="Huruf Besar & Huruf Kecil",
+        banner="BILINGUAL ALPHABET WORKBOOK  •  ENGLISH + BAHASA INDONESIA",
+        tiles="ABC",
+    ),
+}
