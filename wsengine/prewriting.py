@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import math
 
+from wsengine.i18n_manager import I18nManager
+
 from . import config as cfg
 from . import icons
 from .database import Word
@@ -22,10 +24,14 @@ PI = math.pi
 
 
 class PrewriteCtx:
-    def __init__(self, template: str, page_no: int, page_total: int, words: dict[str, Word]):
+    def __init__(self, template: str, page_no: int, page_total: int, words: dict[str, Word], lang: str = "es"):
         self.template, self.page_no, self.page_total, self.words = template, page_no, page_total, words
         self.spec = cfg.PREWRITE_TEMPLATES[template]
         self.content = cfg.PREWRITE_CONTENT.get(template)
+        self.i18n = I18nManager(target_lang=lang)
+
+    def t(self, key_path: str) -> tuple[str, str]:
+        return self.i18n.t(key_path)
 
     @property
     def color(self):
@@ -277,18 +283,24 @@ def dot_rows_h(c, ctx, y_top, rows, row_h, color):
 
 
 # ====================================================================== A: vertical lines
-def page_a(c, ctx):
+def page_a(c, ctx: PrewriteCtx):
     header(c, ctx)
-    instruction(c, ctx, "Tebalkan garis tegak dari atas ke bawah. Mulai dari titik hijau.",
-                "Trace the vertical lines from top to bottom. Start at the green dot.")
+    
+    # 1. Instruksi dinamis
+    t_target, t_en = ctx.t("page_a.instruction")
+    instruction(c, ctx, t_target, t_en)
+
     y = TOP - 40
-    y = sec(c, ctx, y, 1, "Hujan turun dari awan", "Rain falls from the cloud")
+
+    s1_target, s1_en = ctx.t("page_a.sec_1")
+    y = sec(c, ctx, y, 1, s1_target, s1_en)
     cloud(c, X0 + 24, X0 + AVAIL_W - 24, y - 20)
     for i in range(8):
         x = X0 + 30 + i * (AVAIL_W - 60) / 7
         trace(c, seg((x, y - 46), (x, y - 98)), end="dot", arrows=(0.55,))
     y -= 108
-    y = sec(c, ctx, y, 2, "Pagar kayu", "A wooden fence")
+    s2_target, s2_en = ctx.t("page_a.sec_2")
+    y = sec(c, ctx, y, 2, s2_target, s2_en)
     for yy in (y - 30, y - 62):
         c.setFillColor(hx("#E7C9A0"))
         c.setStrokeColor(hx(cfg.NAVY))
@@ -298,7 +310,8 @@ def page_a(c, ctx):
         x = X0 + 28 + i * (AVAIL_W - 56) / 8
         trace(c, seg((x, y - 6), (x, y - 94)), end="dot", arrows=(0.5,), lw=9)
     y -= 108
-    y = sec(c, ctx, y, 3, "Balon dengan tali", "Balloons with strings")
+    s3_target, s3_en = ctx.t("page_a.sec_3")
+    y = sec(c, ctx, y, 3, s3_target, s3_en)
     for i in range(6):
         x = X0 + 45 + i * (AVAIL_W - 90) / 5
         c.setFillColor(hx(cfg.SWATCHES[i % len(cfg.SWATCHES)]))
@@ -307,7 +320,8 @@ def page_a(c, ctx):
         c.ellipse(x - 14, y - 36, x + 14, y - 2, stroke=1, fill=1)
         trace(c, seg((x, y - 38), (x, y - 98)), end="dot", arrows=(0.5,))
     y -= 108
-    y = sec(c, ctx, y, 4, "Tarik garis tegak dari titik atas ke titik bawah", "Draw a line from each top dot to the dot below")
+    s4_target, s4_en = ctx.t("page_a.sec_4")
+    y = sec(c, ctx, y, 4, s4_target, s4_en)
     xs = [X0 + 20 + i * (AVAIL_W - 40) / 9 for i in range(10)]
     dots(c, [(x, y - 8) for x in xs] + [(x, y - 82) for x in xs], 3.2)
     connect_example(c, (xs[0], y - 8), (xs[0], y - 82), ctx.color)
@@ -315,16 +329,20 @@ def page_a(c, ctx):
 
 
 # ====================================================================== B: horizontal lines
-def page_b(c, ctx):
+def page_b(c, ctx: PrewriteCtx):
     header(c, ctx)
-    instruction(c, ctx, "Tebalkan garis datar dari kiri ke kanan. Mulai dari titik hijau.",
-                "Trace the horizontal lines from left to right. Start at the green dot.")
+    t_target, t_en = ctx.t("page_b.instruction")
+    instruction(c, ctx, t_target, t_en)
     y = TOP - 40
-    y = sec(c, ctx, y, 1, "Antar ke tujuannya", "Take each one to its goal")
+
+    s1_target, s1_en = ctx.t("page_b.sec_1")
+    y = sec(c, ctx, y, 1, s1_target, s1_en)
     for i, (a, b) in enumerate(ctx.content):
         pair_row(c, ctx, a, b, y - 22 - i * 44, lambda xa, xb, ym: seg((xa, ym), (xb, ym)))
     y -= 4 * 44 + 6
-    y = sec(c, ctx, y, 2, "Jalan lurus: tarik garis di dalam jalan", "Straight road: draw a line inside the road")
+
+    s2_target, s2_en = ctx.t("page_b.sec_2")
+    y = sec(c, ctx, y, 2, s2_target, s2_en)
     for i in range(3):
         ym = y - 18 - i * 36
         pts = seg((X0 + 30, ym), (X0 + AVAIL_W - 36, ym))
@@ -332,24 +350,29 @@ def page_b(c, ctx):
         start_marker(c, pts[0])
         flag(c, (pts[1][0] + 2, pts[1][1] - 2))
     y -= 3 * 36 + 6
-    y = sec(c, ctx, y, 3, "Tarik garis datar dari titik kiri ke titik kanan", "Draw a line from each left dot to the dot on the right")
+
+    s3_target, s3_en = ctx.t("page_b.sec_3")
+    y = sec(c, ctx, y, 3, s3_target, s3_en)
     dot_rows_h(c, ctx, y, 5, 19, ctx.color)
     footer(c, ctx)
 
 
 # ====================================================================== C: diagonal lines
-def page_c(c, ctx):
+def page_c(c, ctx: PrewriteCtx):
     header(c, ctx)
-    instruction(c, ctx, "Tebalkan garis miring. Ikuti arah panah dari titik hijau.",
-                "Trace the diagonal lines. Follow the arrows from the green dot.")
+    t_target, t_en = ctx.t("page_c.instruction")
+    instruction(c, ctx, t_target, t_en)
+    
     y = TOP - 40
-    y = sec(c, ctx, y, 1, "Perosotan ke kanan dan ke kiri", "Slides going right and left")
+    s1_target, s1_en = ctx.t("page_c.sec_1")
+    y = sec(c, ctx, y, 1, s1_target, s1_en)
     for i in range(6):
         xs = X0 + 28 + i * 80
         a, b = (xs, y - 6), (xs + 50, y - 94)
         trace(c, seg(a, b) if i % 2 == 0 else seg((b[0], a[1]), (a[0], b[1])), end="dot", arrows=(0.5,))
     y -= 104
-    y = sec(c, ctx, y, 2, "Atap rumah", "House roofs")
+    s2_target, s2_en = ctx.t("page_c.sec_2")
+    y = sec(c, ctx, y, 2, s2_target, s2_en)
     for i in range(3):
         cx = X0 + 85 + i * 170
         c.setFillColor(hx(["#FFE0B3", "#D6F0FF", "#FFD9E6"][i]))
@@ -360,13 +383,15 @@ def page_c(c, ctx):
         c.rect(cx - 9, y - 98, 18, 28, stroke=1, fill=1)
         trace(c, [(cx - 60, y - 54), (cx, y - 6), (cx + 60, y - 54)], end="dot", arrows=(0.25, 0.75))
     y -= 108
-    y = sec(c, ctx, y, 3, "Tanda silang: garis 1 lalu garis 2", "Crosses: line 1 and then line 2")
+    s3_target, s3_en = ctx.t("page_c.sec_3")
+    y = sec(c, ctx, y, 3, s3_target, s3_en)
     for i in range(5):
         cx = X0 + 55 + i * 100
         trace(c, seg((cx - 28, y - 8), (cx + 28, y - 92)), end="dot", arrows=(0.5,), lw=9)
         trace(c, seg((cx + 28, y - 8), (cx - 28, y - 92)), end="dot", arrows=(0.5,), lw=9)
     y -= 108
-    y = sec(c, ctx, y, 4, "Tarik garis miring dari titik atas ke titik bawah", "Draw a line from each top dot to the dot below")
+    s4_target, s4_en = ctx.t("page_c.sec_4")
+    y = sec(c, ctx, y, 4, s4_target, s4_en)
     xs = [X0 + 20 + i * (AVAIL_W - 90) / 8 for i in range(9)]
     dots(c, [(x, y - 8) for x in xs] + [(x + 50, y - 78) for x in xs], 3.2)
     connect_example(c, (xs[0], y - 8), (xs[0] + 50, y - 78), ctx.color)
@@ -374,26 +399,30 @@ def page_c(c, ctx):
 
 
 # ====================================================================== D: zigzag
-def page_d(c, ctx):
+def page_d(c, ctx: PrewriteCtx):
     header(c, ctx)
-    instruction(c, ctx, "Tebalkan garis zigzag. Naik, turun, naik, turun!",
-                "Trace the zigzag lines. Up, down, up, down!")
+    t_target, t_en = ctx.t("page_d.instruction")
+    instruction(c, ctx, t_target, t_en)
     y = TOP - 40
-    y = sec(c, ctx, y, 1, "Pegunungan", "Mountains")
+    s1_target, s1_en = ctx.t("page_d.sec_1")
+    y = sec(c, ctx, y, 1, s1_target, s1_en)
     for i in range(3):
         ym = y - 20 - i * 36
         trace(c, zig(X0 + 16, X0 + AVAIL_W - 26, ym - 12, ym + 12, 12), arrows=(0.3, 0.7), lw=9)
     y -= 3 * 36 + 6
-    y = sec(c, ctx, y, 2, "Terbang berkelok-kelok ke tujuan", "Zigzag all the way to the goal")
+    s2_target, s2_en = ctx.t("page_d.sec_2")
+    y = sec(c, ctx, y, 2, s2_target, s2_en)
     for i, (a, b) in enumerate(ctx.content):
         pair_row(c, ctx, a, b, y - 20 - i * 40, lambda xa, xb, ym: zig(xa, xb, ym - 13, ym + 13, 9), icon=34, lw=9)
     y -= 3 * 40 + 6
-    y = sec(c, ctx, y, 3, "Petir dari awan", "Lightning from the clouds")
+    s3_target, s3_en = ctx.t("page_d.sec_3")
+    y = sec(c, ctx, y, 3, s3_target, s3_en)
     for i in range(6):
         cx = X0 + 40 + i * 86
         trace(c, zig_v(cx, y - 6, y - 92, 13, 6), end="dot", arrows=(0.5,), lw=9)
     y -= 100
-    y = sec(c, ctx, y, 4, "Hubungkan titik-titik menjadi zigzag", "Join the dots to make a zigzag")
+    s4_target, s4_en = ctx.t("page_d.sec_4")
+    y = sec(c, ctx, y, 4, s4_target, s4_en)
     for r in range(2):
         ym = y - 22 - r * 30
         pts = [(X0 + 20 + i * (AVAIL_W - 40) / 13, ym - 10 if i % 2 == 0 else ym + 10) for i in range(14)]
@@ -404,12 +433,13 @@ def page_d(c, ctx):
 
 
 # ====================================================================== E: curved lines
-def page_e(c, ctx):
+def page_e(c, ctx: PrewriteCtx):
     header(c, ctx)
-    instruction(c, ctx, "Tebalkan garis lengkung dengan gerakan yang halus.",
-                "Trace the curved lines with a smooth movement.")
+    t_target, t_en = ctx.t("page_e.instruction")
+    instruction(c, ctx, t_target, t_en)
     y = TOP - 40
-    y = sec(c, ctx, y, 1, "Pelangi: merah, kuning, biru", "A rainbow: red, yellow, blue")
+    s1_target, s1_en = ctx.t("page_e.sec_1")
+    y = sec(c, ctx, y, 1, s1_target, s1_en)
     cx, base = X0 + AVAIL_W / 2, y - 112
     for r, col in ((104, RED), (80, "#FFB703"), (56, "#4D9DE0")):
         pts = arc(cx, base, r, r, 180, 0, 60)
@@ -421,14 +451,16 @@ def page_e(c, ctx):
     cloud(c, cx - 200, cx - 140, base + 8)
     cloud(c, cx + 140, cx + 200, base + 8)
     y -= 122
-    y = sec(c, ctx, y, 2, "Bola melompat ke bintang", "The ball bounces to the star")
+    s2_target, s2_en = ctx.t("page_e.sec_2")
+    y = sec(c, ctx, y, 2, s2_target, s2_en)
     a, b = ctx.content[0]
     for i in range(2):
         ym = y - 28 - i * 52
         pair_row(c, ctx, a, b, ym, lambda xa, xb, yy, h=22 + 8 * i, k=5 - i: hops(xa, xb, yy - 10, h, k), icon=34,
                  arrows=(0.2, 0.7))
     y -= 2 * 52 + 6
-    y = sec(c, ctx, y, 3, "Senyum dan bukit", "Smiles and hills")
+    s3_target, s3_en = ctx.t("page_e.sec_3")
+    y = sec(c, ctx, y, 3, s3_target, s3_en)
     for r in range(2):
         ym = y - 6 - r * 42
         for i in range(6):
@@ -436,7 +468,8 @@ def page_e(c, ctx):
             pts = arc(x0 + 30, ym - 8, 30, 14, 180, 360, 30) if r == 0 else arc(x0 + 30, ym - 28, 30, 16, 180, 0, 30)
             trace(c, pts, end="dot", arrows=(0.5,), lw=8)
     y -= 2 * 42 + 8
-    y = sec(c, ctx, y, 4, "Hubungkan titik-titik menjadi lengkungan", "Join the dots to make arches")
+    s4_target, s4_en = ctx.t("page_e.sec_4")
+    y = sec(c, ctx, y, 4, s4_target, s4_en)
     for i in range(4):
         cx2 = X0 + 66 + i * 125
         pts = arc(cx2, y - 70, 40, 44, 180, 0, 11)
@@ -447,26 +480,30 @@ def page_e(c, ctx):
 
 
 # ====================================================================== F: wavy lines
-def page_f(c, ctx):
+def page_f(c, ctx: PrewriteCtx):
     header(c, ctx)
-    instruction(c, ctx, "Tebalkan garis gelombang. Bergelombang seperti air!",
-                "Trace the wavy lines. Wavy like water!")
+    t_target, t_en = ctx.t("page_f.instruction")
+    instruction(c, ctx, t_target, t_en)
     y = TOP - 40
-    y = sec(c, ctx, y, 1, "Ombak: besar, sedang, kecil", "Waves: big, medium, small")
+    s1_target, s1_en = ctx.t("page_f.sec_1")
+    y = sec(c, ctx, y, 1, s1_target, s1_en)
     for i, (amp, cyc) in enumerate(((13, 5), (10, 8), (7, 12))):
         ym = y - 18 - i * 34
         trace(c, sine(X0 + 16, X0 + AVAIL_W - 26, ym, amp, cyc), arrows=(0.3, 0.7), lw=9)
     y -= 3 * 34 + 8
-    y = sec(c, ctx, y, 2, "Berenang dan meliuk ke tujuan", "Wiggle all the way to the goal")
+    s2_target, s2_en = ctx.t("page_f.sec_2")
+    y = sec(c, ctx, y, 2, s2_target, s2_en)
     for i, (a, b) in enumerate(ctx.content):
         pair_row(c, ctx, a, b, y - 22 - i * 44, lambda xa, xb, ym: sine(xa, xb, ym, 13, 6), icon=36, lw=9)
     y -= 3 * 44 + 6
-    y = sec(c, ctx, y, 3, "Air mengalir ke bawah", "Water flowing down")
+    s3_target, s3_en = ctx.t("page_f.sec_3")
+    y = sec(c, ctx, y, 3, s3_target, s3_en)
     for i in range(7):
         cx = X0 + 36 + i * 74
         trace(c, sine_v(cx, y - 6, y - 78, 9, 3), end="dot", arrows=(0.5,), lw=9)
     y -= 88
-    y = sec(c, ctx, y, 4, "Hubungkan titik-titik menjadi gelombang", "Join the dots to make a wave")
+    s4_target, s4_en = ctx.t("page_f.sec_4")
+    y = sec(c, ctx, y, 4, s4_target, s4_en)
     for r in range(3):
         ym = y - 14 - r * 22
         pts = sine(X0 + 16, X0 + AVAIL_W - 16, ym, 8, 4, 40)
@@ -477,12 +514,13 @@ def page_f(c, ctx):
 
 
 # ====================================================================== G: circles and spirals
-def page_g(c, ctx):
+def page_g(c, ctx: PrewriteCtx):
     header(c, ctx)
-    instruction(c, ctx, "Tebalkan lingkaran dan spiral. Berputar berlawanan arah jarum jam.",
-                "Trace the circles and spirals. Turn counter-clockwise.")
+    t_target, t_en = ctx.t("page_g.instruction")
+    instruction(c, ctx, t_target, t_en)
     y = TOP - 40
-    y = sec(c, ctx, y, 1, "Lingkaran besar sampai kecil", "Circles from big to small")
+    s1_target, s1_en = ctx.t("page_g.sec_1")
+    y = sec(c, ctx, y, 1, s1_target, s1_en)
     for i, r in enumerate((38, 31, 24, 17)):
         cx = X0 + 62 + i * 128
         pts = circle(cx, y - 46, r)
@@ -490,7 +528,8 @@ def page_g(c, ctx):
         arrow_at(c, pts[:19], 0.5)
         start_marker(c, pts[0])
     y -= 98
-    y = sec(c, ctx, y, 2, "Spiral: mulai dari tengah", "Spirals: start in the middle")
+    s2_target, s2_en = ctx.t("page_g.sec_2")
+    y = sec(c, ctx, y, 2, s2_target, s2_en)
     for i in range(2):
         cx = X0 + AVAIL_W / 4 + i * AVAIL_W / 2
         pts = spiral(cx, y - 62, 58, 3)
@@ -499,12 +538,14 @@ def page_g(c, ctx):
         start_marker(c, pts[0])
         flag(c, (pts[-1][0] + 2, pts[-1][1] - 2))
     y -= 132
-    y = sec(c, ctx, y, 3, "Lilitan seperti pegas", "Loops like a spring")
+    s3_target, s3_en = ctx.t("page_g.sec_3")
+    y = sec(c, ctx, y, 3, s3_target, s3_en)
     for i in range(3):
         ym = y - 18 - i * 36
         trace(c, loops(X0 + 16, X0 + AVAIL_W - 30, ym, 14, 6), arrows=(0.25, 0.75), lw=8)
     y -= 3 * 36 + 8
-    y = sec(c, ctx, y, 4, "Hubungkan titik-titik menjadi lingkaran", "Join the dots to make circles")
+    s4_target, s4_en = ctx.t("page_g.sec_4")
+    y = sec(c, ctx, y, 4, s4_target, s4_en)
     for i in range(4):
         cx = X0 + 62 + i * 128
         pts = circle(cx, y - 38, 28, 90, True, 14)
@@ -543,8 +584,8 @@ def _pattern(kind, x0, x1, y0, h, n):
 
 def page_h(c, ctx):
     header(c, ctx)
-    instruction(c, ctx, "Lihat pola di awal garis, lalu lanjutkan dengan menebalkan garis putus-putus.",
-                "Look at the pattern at the start of the line, then trace the dashed line to continue it.")
+    t_target, t_en = ctx.t("page_h.instruction")
+    instruction(c, ctx, t_target, t_en)
     y = TOP - 40
     kinds = ["square", "saw", "hop", "double", "wave_flat", "tick"]
     for i, kind in enumerate(kinds):
@@ -590,10 +631,10 @@ def _paths(ctx):
     return [s_curve, stairs, zigzag, loop]
 
 
-def page_i(c, ctx):
+def page_i(c, ctx: PrewriteCtx):
     header(c, ctx)
-    instruction(c, ctx, "Tarik garis di dalam jalan, dari titik hijau sampai tujuan.",
-                "Draw a line inside the path, from the green dot to the goal.")
+    t_target, t_en = ctx.t("page_i.instruction")
+    instruction(c, ctx, t_target, t_en)
     y = TOP - 40
     h = 122
     for i, ((a, b), fn) in enumerate(zip(ctx.content, _paths(ctx))):
@@ -610,19 +651,24 @@ def page_i(c, ctx):
 
 
 # ====================================================================== J: basic shapes
-def _shapes(cx, cy, w, h):
+def _shapes(cx, cy, w, h, ctx: PrewriteCtx):
     r = min(w, h) / 2
+    
+    def get_shape(key, geom_fn):
+        t_target, t_en = ctx.t(f"shapes.{key}")
+        return (t_target, t_en, geom_fn)
+
     return [
-        ("lingkaran", "circle", circle(cx, cy, r)),
-        ("persegi", "square", poly_closed([(cx - r, cy + r), (cx + r, cy + r), (cx + r, cy - r), (cx - r, cy - r)])),
-        ("segitiga", "triangle", poly_closed([(cx, cy + r), (cx + r, cy - r), (cx - r, cy - r)])),
-        ("persegi panjang", "rectangle", poly_closed([(cx - w / 2, cy + r * 0.6), (cx + w / 2, cy + r * 0.6),
-                                                       (cx + w / 2, cy - r * 0.6), (cx - w / 2, cy - r * 0.6)])),
-        ("oval", "oval", [(cx + (w / 2) * math.cos(math.radians(90 + 360 * i / 72)), cy + r * 0.72 * math.sin(math.radians(90 + 360 * i / 72)))
-                          for i in range(73)]),
-        ("belah ketupat", "diamond", poly_closed([(cx, cy + r), (cx + r * 0.8, cy), (cx, cy - r), (cx - r * 0.8, cy)])),
-        ("bintang", "star", star(cx, cy, r * 1.05)),
-        ("hati", "heart", heart(cx, cy, r * 2)),
+        get_shape("circle", circle(cx, cy, r)),
+        get_shape("square", poly_closed([(cx - r, cy + r), (cx + r, cy + r), (cx + r, cy - r), (cx - r, cy - r)])),
+        get_shape("triangle", poly_closed([(cx, cy + r), (cx + r, cy - r), (cx - r, cy - r)])),
+        get_shape("rectangle", poly_closed([(cx - w / 2, cy + r * 0.6), (cx + w / 2, cy + r * 0.6),
+                                            (cx + w / 2, cy - r * 0.6), (cx - w / 2, cy - r * 0.6)])),
+        get_shape("oval", [(cx + (w / 2) * math.cos(math.radians(90 + 360 * i / 72)), cy + r * 0.72 * math.sin(math.radians(90 + 360 * i / 72)))
+                           for i in range(73)]),
+        get_shape("diamond", poly_closed([(cx, cy + r), (cx + r * 0.8, cy), (cx, cy - r), (cx - r * 0.8, cy)])),
+        get_shape("star", star(cx, cy, r * 1.05)),
+        get_shape("heart", heart(cx, cy, r * 2)),
     ]
 
 
@@ -636,7 +682,7 @@ def page_j(c, ctx):
         r_, k = divmod(i, 4)
         x, yy = X0 + k * (cw + 10), y - r_ * 104
         card_box(c, x, yy - 98, cw, 98, ctx.color, fill="#FFFFFF", lw=2, r=12)
-        name_id, name_en, pts = _shapes(x + cw / 2, yy - 41, 54, 54)[i]
+        name_id, name_en, pts = _shapes(x + cw / 2, yy - 41, 54, 54, ctx)[i]
         guide(c, pts, 8)
         start_marker(c, pts[0])
         text(c, name_id, x + cw / 2, yy - 86, cfg.F_BOLD, 9.5, cfg.NAVY, "center", max_width=cw - 8)

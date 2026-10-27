@@ -131,52 +131,68 @@ def card_box(c, x, y, w, h, color, fill=cfg.LIGHT, lw=2.4, r=16):
 
 
 # ------------------------------------------------------------------ Header module
-def header(c, ctx: Ctx):
+def header(c, ctx):
     col = ctx.color
-    # page frame
+    # Fetch i18n label values
+    name_lbl_target, name_lbl_en = ctx.t("common.name_label")
+    date_lbl_target, date_lbl_en = ctx.t("common.date_label")
+    goal_lbl_target, goal_lbl_en = ctx.t("common.goal_label")
+    age_target, age_en = ctx.t("brand.age")
+
+    # Frame & Base layout...
     c.setStrokeColor(hx(col))
     c.setLineWidth(3)
     c.roundRect(14, 14, W - 28, H - 28, 18, stroke=1, fill=0)
-    # Name / Date
+
+    # Name / Date line
     y = H - 50
-    text(c, "Nama / Name", M + 8, y, cfg.F_MED, 9, cfg.GREY)
+    text(c, f"{name_lbl_target} / {name_lbl_en}", M + 8, y, cfg.F_MED, 9, cfg.GREY)
     c.setStrokeColor(hx(cfg.LINE))
     c.setLineWidth(1.2)
-    c.line(M + 78, y - 2, 330, y - 2)
-    text(c, "Tanggal / Date", 350, y, cfg.F_MED, 9, cfg.GREY)
-    c.line(430, y - 2, W - M - 8, y - 2)
-    # template badge + title
+    c.line(M + 95, y - 2, 330, y - 2)
+    text(c, f"{date_lbl_target} / {date_lbl_en}", 350, y, cfg.F_MED, 9, cfg.GREY)
+    c.line(440, y - 2, W - M - 8, y - 2)
+
+    # Template badge + title
     cx, cy = M + 30, H - 92
     c.setFillColor(hx(col))
     c.setStrokeColor(hx(cfg.NAVY))
     c.setLineWidth(2.4)
     c.circle(cx, cy, 21, stroke=1, fill=1)
     text(c, ctx.template, cx, cy - 8, cfg.F_BOLD, 22, "#FFFFFF", "center")
-    title_en, title_id = ctx.fill(ctx.spec["title_en"]), ctx.fill(ctx.spec["title_id"])
-    id_first = ctx.spec.get("primary") == "id"
-    if id_first:  # Indonesian-first series: Indonesian title large, English below
-        title_en, title_id = title_id, title_en
+
+    # Deteksi prefix key dinamis: prewrite_a vs template_a
+    prefix = "prewrite" if ctx.spec.get("series") else "template"
+    t_key = f"{prefix}_{ctx.template.lower()}"
+
+    title_target, title_en = ctx.t(f"{t_key}.title")
+
     tx, avail = cx + 32, W - M - 140 - (cx + 32)
-    text(c, title_en, tx, cy - 2, cfg.F_BOLD, 25, cfg.NAVY, max_width=avail)
-    text(c, title_id, tx, cy - 22, cfg.F_MED, 13, col, max_width=avail)
-    # age pill
+    text(c, title_target, tx, cy - 2, cfg.F_BOLD, 25, cfg.NAVY, max_width=avail)
+    text(c, title_en, tx, cy - 22, cfg.F_MED, 13, col, max_width=avail)
+
+    # Age pill
     pw = 112
     c.setFillColor(hx(col))
     c.roundRect(W - M - 8 - pw, cy - 4, pw, 34, 12, stroke=0, fill=1)
-    text(c, cfg.BRAND["age_en"], W - M - 8 - pw / 2, cy + 14, cfg.F_BOLD, 10, "#FFFFFF", "center")
-    text(c, cfg.BRAND["age_id"], W - M - 8 - pw / 2, cy + 3, cfg.F_MED, 8, "#FFFFFF", "center")
-    # learning objective
-    first, second = ("Tujuan:  " + ctx.spec["goal_id"], "Goal:  " + ctx.spec["goal_en"]) if id_first else \
-                    ("Goal:  " + ctx.spec["goal_en"], "Tujuan:  " + ctx.spec["goal_id"])
-    one_line = first + "  \u2022  " + second
+    text(c, age_target, W - M - 8 - pw / 2, cy + 14, cfg.F_BOLD, 10, "#FFFFFF", "center")
+    text(c, age_en, W - M - 8 - pw / 2, cy + 3, cfg.F_MED, 8, "#FFFFFF", "center")
+
+    # Learning objective
+    goal_target, goal_en = ctx.t(f"{t_key}.goal")
+    first = f"{goal_lbl_target}:  {goal_target}"
+    second = f"{goal_lbl_en}:  {goal_en}"
+    one_line = first + "  •  " + second
     avail_w = W - 2 * M - 16
-    if fit_size(one_line, cfg.F_IT, 8.5, avail_w) >= 7.2:      # fits comfortably on one line
+
+    if fit_size(one_line, cfg.F_IT, 8.5, avail_w) >= 7.2:
         text(c, one_line, M + 8, H - 132, cfg.F_IT, 8.5, cfg.GREY, max_width=avail_w)
         div_y = H - 140
-    else:                                                      # long objective: two lines
+    else:
         text(c, first, M + 8, H - 126, cfg.F_IT, 8.3, cfg.GREY, max_width=avail_w)
         text(c, second, M + 8, H - 136, cfg.F_IT, 8.3, cfg.GREY, max_width=avail_w)
         div_y = H - 143
+
     c.setStrokeColor(hx(cfg.LINE))
     c.setLineWidth(1)
     c.setDash(4, 4)
@@ -191,22 +207,34 @@ def instruction(c, ctx, en, idn, y=None, x=M + 8):
 
 
 # ------------------------------------------------------------------ Footer + parent tip
-def footer(c, ctx: Ctx):
-    tip_en, tip_id = ctx.spec["tip_en"], ctx.spec["tip_id"]
+def footer(c, ctx):
+    prefix = "prewrite" if ctx.spec.get("series") else "template"
+    t_key = f"{prefix}_{ctx.template.lower()}"
+
+    tip_target, tip_en = ctx.t(f"{t_key}.tip")
+    tip_lbl_target, tip_lbl_en = ctx.t("common.tip_label")
+
     c.setFillColor(hx("#FFF8E6"))
     c.setStrokeColor(hx("#F5C86B"))
     c.setLineWidth(1)
     c.roundRect(M + 8, 66, W - 2 * M - 16, 28, 8, stroke=1, fill=1)
-    text(c, "Tips orang tua / Parent tip:  " + tip_id, M + 16, 83, cfg.F_MED, 7.8, cfg.NAVY, max_width=W - 2 * M - 32)
+
+    text(c, f"{tip_lbl_target} / {tip_lbl_en}:  {tip_target}", M + 16, 83, cfg.F_MED, 7.8, cfg.NAVY, max_width=W - 2 * M - 32)
     text(c, tip_en, M + 16, 72, cfg.F_IT, 7.8, cfg.GREY, max_width=W - 2 * M - 32)
+
     c.setStrokeColor(hx(cfg.LINE))
     c.setLineWidth(1)
     c.line(M + 8, 58, W - M - 8, 58)
-    text(c, cfg.BRAND["name"] + " \u2022 " + (ctx.spec.get("series") or cfg.BRAND["tagline"]), M + 8, 46, cfg.F_BOLD, 8, cfg.NAVY)
+
+    series_title_target, _ = ctx.t("prewrite_set.title")
+    brand_tagline_target, _ = ctx.t("brand.tagline")
+    subtitle = series_title_target if ctx.spec.get("series") else brand_tagline_target
+
+    text(c, f"{cfg.BRAND['name']} • {subtitle}", M + 8, 46, cfg.F_BOLD, 8, cfg.NAVY)
     text(c, f"{ctx.page_no} / {ctx.page_total}", W - M - 8, 46, cfg.F_MED, 8, cfg.GREY, "right")
-    text(c, cfg.BRAND["copyright"], M + 8, 33, cfg.F_REG, 6.5, cfg.GREY, max_width=W - 2 * M - 16)
 
-
+    copyright_target, _ = ctx.t("common.copyright")
+    text(c, copyright_target, M + 8, 33, cfg.F_REG, 6.5, cfg.GREY, max_width=W - 2 * M - 16)
 # ------------------------------------------------------------------ cards
 def item_card(c, ctx, x, y_top, w, h, item: Item, show_words=True, icon_size=108, outline=False):
     """Card with artwork on top and EN / ID words underneath."""
